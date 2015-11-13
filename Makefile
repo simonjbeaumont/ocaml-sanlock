@@ -29,10 +29,7 @@ setup.data: setup.ml
 	ocaml setup.ml -configure $(CONFIGUREFLAGS)
 
 setup.ml: _oasis
-	@-git update-index --assume-unchanged myocamlbuild.ml 2>/dev/null
 	./configure
-	oasis setup
-	touch $@
 
 travis-coveralls.sh:
 	wget https://raw.githubusercontent.com/simonjbeaumont/ocaml-travis-coveralls/master/$@

@@ -5,6 +5,9 @@ trap "rm -f libsanlock_check" EXIT
 (gcc stubgen/libsanlock_check.c -o libsanlock_check 2>/dev/null && ./libsanlock_check) ||
   (echo "Package needs libsanlock headers to be installed on your system."; exit 1)
 
+git update-index --assume-unchanged myocamlbuild.ml 2>/dev/null || true
+oasis setup && touch setup.ml
+
 FST=true
 for i in "$@"; do
   if $FST; then
@@ -23,3 +26,5 @@ for i in "$@"; do
       ;;
   esac
 done
+
+ocaml setup.ml -configure "$@"
