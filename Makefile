@@ -29,7 +29,7 @@ setup.data: setup.ml
 	ocaml setup.ml -configure $(CONFIGUREFLAGS)
 
 setup.ml: _oasis
-	@-git update-index --assume-unchanged Makefile myocamlbuild.ml 2>/dev/null
+	@-git update-index --assume-unchanged myocamlbuild.ml 2>/dev/null
 	./configure
 	oasis setup
 	touch $@
