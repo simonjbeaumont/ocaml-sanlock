@@ -20,6 +20,7 @@ remove: [
 ]
 depends: [
   "ctypes" {>= "0.4"}
+  "oasis" {build}
   "ocamlfind" {build}
   "ounit" {test}
 ]
