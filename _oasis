@@ -1,0 +1,63 @@
+OASISFormat:    0.4
+Name:           sanlock
+Version:        1.0.0
+Synopsis:       Ctypes bindings to libsanlock for OCaml
+Authors:        Si Beaumont
+License:        LGPL-2.1 with OCaml linking exception
+Plugins:        META (0.4)
+BuildTools:     ocamlbuild
+
+Library sanlock
+  Path:             lib
+  FindlibName:      sanlock
+  Modules:          Sanlock
+  InternalModules:  Ffi_generated, Ffi_generated_types
+  CSources:         ffi_generated_stubs.c
+  CCOpt:            -I $pkg_ctypes_stubs
+  ByteOpt:          -warn-error +1..45
+  NativeOpt:        -warn-error +1..45
+  BuildDepends:     sanlock_bindings
+
+Library sanlock_bindings
+  Install:          true
+  Path:             bindings
+  Modules:          Ffi_bindings
+  ByteOpt:          -warn-error +1..45
+  NativeOpt:        -warn-error +1..45
+  BuildDepends:     ctypes.stubs, ctypes.foreign
+
+Document sanlock
+  Type:                 ocamlbuild (0.4)
+  BuildTools:           ocamldoc
+  Title:                API reference for sanlock
+  XOCamlBuildPath:      .
+  XOCamlBuildLibraries: sanlock
+
+Executable ffi_stubgen
+  Install:        false
+  Path:           stubgen
+  MainIs:         ffi_stubgen.ml
+  ByteOpt:        -warn-error +1..45
+  NativeOpt:      -warn-error +1..45
+  BuildDepends:   sanlock_bindings
+
+Executable ffi_types_stubgen
+  Install:        false
+  Path:           stubgen
+  MainIs:         ffi_types_stubgen.ml
+  ByteOpt:        -warn-error +1..45
+  NativeOpt:      -warn-error +1..45
+  BuildDepends:   sanlock_bindings
+
+Executable test_sanlock
+  Build$:         flag(tests)
+  Install:        false
+  Path:           lib_test
+  MainIs:         test_sanlock.ml
+  CompiledObject: best
+  ByteOpt:        -warn-error +1..45
+  NativeOpt:      -warn-error +1..45
+  BuildDepends:   sanlock, oUnit
+
+Test test_sanlock
+  Command: $test_sanlock -runner sequential

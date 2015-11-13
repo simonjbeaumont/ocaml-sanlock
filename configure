@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+trap "rm -f libsanlock_check" EXIT
+(gcc stubgen/libsanlock_check.c -o libsanlock_check 2>/dev/null && ./libsanlock_check) ||
+  (echo "Package needs libsanlock headers to be installed on your system."; exit 1)
+
+FST=true
+for i in "$@"; do
+  if $FST; then
+    set --
+    FST=false
+  fi
+
+  case $i in
+    --*=*)
+      ARG=${i%%=*}
+      VAL=${i##*=}
+      set -- "$@" "$ARG" "$VAL"
+      ;;
+    *)
+      set -- "$@" "$i"
+      ;;
+  esac
+done
