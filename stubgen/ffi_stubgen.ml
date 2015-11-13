@@ -14,4 +14,6 @@ let _ =
   | false, true ->
     print_endline "#include <stdint.h>";
     print_endline "#include <sanlock.h>";
+    print_endline "#include <sanlock_admin.h>";
+    print_endline "#include <sanlock_resource.h>";
     Cstubs.write_c Format.std_formatter ~prefix (module Ffi_bindings.Bindings)
