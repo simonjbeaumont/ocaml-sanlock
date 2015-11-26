@@ -19,6 +19,16 @@ module Types (F: Cstubs.Types.TYPE) = struct
     let rem_unused = constant "SANLK_REM_UNUSED" uint32_t
   end
 
+  module Restrict_flag = struct
+    let restrict_all = constant "SANLK_RESTRICT_ALL" uint32_t
+    let restrict_sigkill = constant "SANLK_RESTRICT_SIGKILL" uint32_t
+    let restrict_sigterm = constant "SANLK_RESTRICT_SIGTERM" uint32_t
+  end
+
+  module Release_flag = struct
+    let rel_all = constant "SANLK_REL_ALL" uint32_t
+  end
+
   module Return_value = struct
     let ok = constant "SANLK_OK" int
     let none = constant "SANLK_NONE" int (* unused *)
@@ -309,6 +319,14 @@ module Bindings (F : Cstubs.FOREIGN) = struct
 
   let sanlock_align = foreign "sanlock_align"
     (Sanlk_disk.t @-> returning int)
+
+  (* sock > -1, pid is ignored:
+   * process creates registered connection and acquires/releases leases on
+   * that connection for itself
+   *
+   * sock == -1, pid is used:
+   * process asks daemon to acquire/release leases for another separately
+   * registered pid  *)
 
   let sanlock_register = foreign "sanlock_register"
     (void @-> returning int)
