@@ -1,7 +1,8 @@
 open Ctypes
 open PosixTypes
 
-include Unsigned
+module UInt32 = Unsigned.UInt32
+module UInt64 = Unsigned.UInt64
 
 module Types (F: Cstubs.Types.TYPE) = struct
   open F
