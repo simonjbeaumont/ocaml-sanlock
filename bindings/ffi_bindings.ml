@@ -81,31 +81,31 @@ module Bindings (F : Cstubs.FOREIGN) = struct
       pad2 : UInt32.t;
     }
 
-    type internal_t
-    let internal_t : internal_t structure typ = structure "sanlk_disk"
-    let (-:) ty label = field internal_t label ty
+    type internal
+    let internal : internal structure typ = structure "sanlk_disk"
+    let (-:) ty label = field internal label ty
     let path = string_opt -: "path"
     let offset = uint64_t -: "offset"
     let pad1 = uint32_t -: "pad1"
     let pad2 = uint32_t -: "pad2"
-    let () = seal internal_t
+    let () = seal internal
 
-    let of_internal_t internal =
-      { path = getf internal path;
-        offset = getf internal offset;
-        pad1 = getf internal pad1;
-        pad2 = getf internal pad2;
+    let of_internal_ptr p =
+      { path = getf !@p path;
+        offset = getf !@p offset;
+        pad1 = getf !@p pad1;
+        pad2 = getf !@p pad2;
       }
 
-    let to_internal_t t =
-      let internal = make internal_t in
+    let to_internal_ptr t =
+      let internal = make internal in
       setf internal path t.path;
       setf internal offset t.offset;
       setf internal pad1 t.pad1;
       setf internal pad2 t.pad2;
-      internal
+      addr internal
 
-    let t = view ~read:of_internal_t ~write:to_internal_t internal_t
+    let t = view ~read:of_internal_ptr ~write:to_internal_ptr (ptr internal)
   end
 
   module Sanlk_resource = struct
@@ -121,9 +121,9 @@ module Bindings (F : Cstubs.FOREIGN) = struct
       disks : Sanlk_disk.t list;
     }
 
-    type internal_t
-    let internal_t : internal_t structure typ = structure "sanlk_resource"
-    let (-:) ty label = field internal_t label ty
+    type internal
+    let internal : internal structure typ = structure "sanlk_resource"
+    let (-:) ty label = field internal label ty
     (* TODO: It would be nice to use a char array of length SANLK_NAME_LEN above *)
     let lockspace_name = string_opt -: "lockspace_name" (* terminating \0 not required *)
     let name = string_opt -: "name"                     (* terminating \0 not required *)
@@ -134,28 +134,29 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     let flags = uint32_t -: "flags"   (* SANLK_RES_ *)
     let num_disks = uint32_t -: "num_disks"
     (* followed by num_disks sanlk_disk structs *)
-    let disks = ptr Sanlk_disk.internal_t -: "disks"
-    let () = seal internal_t
+    let disks = ptr Sanlk_disk.internal -: "disks"
+    let () = seal internal
 
-    let of_internal_t internal =
+    let of_internal_ptr p =
       let disks =
-        let disks_ptr = getf internal disks in
-        let disks_len = getf internal num_disks |> UInt32.to_int in
+        let disks_ptr = getf !@p disks in
+        let disks_len = getf !@p num_disks |> UInt32.to_int in
         CArray.(from_ptr disks_ptr disks_len |> to_list)
-        |> List.map (Sanlk_disk.of_internal_t) in
-      { lockspace_name = getf internal lockspace_name;
-        name = getf internal name;
-        lver = getf internal lver;
-        data64 = getf internal data64;
-        data32 = getf internal data32;
-        unused = getf internal unused;
-        flags = getf internal flags;
-        num_disks = getf internal num_disks;
+        |> List.map addr
+        |> List.map (Sanlk_disk.of_internal_ptr) in
+      { lockspace_name = getf !@p lockspace_name;
+        name = getf !@p name;
+        lver = getf !@p lver;
+        data64 = getf !@p data64;
+        data32 = getf !@p data32;
+        unused = getf !@p unused;
+        flags = getf !@p flags;
+        num_disks = getf !@p num_disks;
         disks;
       }
 
-    let to_internal_t t =
-      let internal = make internal_t in
+    let to_internal_ptr t =
+      let internal = make internal in
       setf internal lockspace_name t.lockspace_name;
       setf internal name t.name;
       setf internal lver t.lver;
@@ -165,13 +166,14 @@ module Bindings (F : Cstubs.FOREIGN) = struct
       setf internal flags t.flags;
       setf internal num_disks t.num_disks;
       let disks_ptr =
-        List.map Sanlk_disk.to_internal_t t.disks
-        |> CArray.of_list Sanlk_disk.internal_t
+        List.map Sanlk_disk.to_internal_ptr t.disks
+        |> List.map (!@)
+        |> CArray.of_list Sanlk_disk.internal
         |> CArray.start in
       setf internal disks disks_ptr;
-      internal
+      addr internal
 
-    let t = view ~read:of_internal_t ~write:to_internal_t internal_t
+    let t = view ~read:of_internal_ptr ~write:to_internal_ptr (ptr internal)
   end
 
   module Sanlk_options = struct
@@ -182,32 +184,32 @@ module Bindings (F : Cstubs.FOREIGN) = struct
       str : char list;
     }
 
-    type internal_t
-    let internal_t : internal_t structure typ = structure "sanlk_options"
-    let (-:) ty label = field internal_t label ty
+    type internal
+    let internal : internal structure typ = structure "sanlk_options"
+    let (-:) ty label = field internal label ty
     let name = string_opt -: "name"
     let flags = uint32_t -: "flags"
     let len = uint32_t -: "len"
     (* followed by len bytes (migration input will use this) *)
     let str = (array 0 char) -: "str"
-    let () = seal internal_t
+    let () = seal internal
 
-    let of_internal_t internal =
-      { name = getf internal name;
-        flags = getf internal flags;
-        len = getf internal len;
-        str = getf internal str |> CArray.to_list;
+    let of_internal_ptr p =
+      { name = getf !@p name;
+        flags = getf !@p flags;
+        len = getf !@p len;
+        str = getf !@p str |> CArray.to_list;
       }
 
-    let to_internal_t t =
-      let internal = make internal_t in
+    let to_internal_ptr t =
+      let internal = make internal in
       setf internal name t.name;
       setf internal flags t.flags;
       setf internal len t.len;
       setf internal str CArray.(of_list char t.str);
-      internal
+      addr internal
 
-    let t = view ~read:of_internal_t ~write:to_internal_t internal_t
+    let t = view ~read:of_internal_ptr ~write:to_internal_ptr (ptr internal)
   end
 
   module Sanlk_lockspace = struct
@@ -218,31 +220,31 @@ module Bindings (F : Cstubs.FOREIGN) = struct
       host_id_disk : Sanlk_disk.t;
     }
 
-    type internal_t
-    let internal_t : internal_t structure typ = structure "sanlk_lockspace"
-    let (-:) ty label = field internal_t label ty
+    type internal
+    let internal : internal structure typ = structure "sanlk_lockspace"
+    let (-:) ty label = field internal label ty
     let name = string_opt -: "name"
     let host_id = uint64_t -: "host_id"
     let flags = uint32_t -: "flags"
-    let host_id_disk = Sanlk_disk.internal_t -: "sanlk_disk"
-    let () = seal internal_t
+    let host_id_disk = Sanlk_disk.internal -: "sanlk_disk"
+    let () = seal internal
 
-    let of_internal_t internal =
-      { name = getf internal name;
-        host_id = getf internal host_id;
-        flags = getf internal flags;
-        host_id_disk = getf internal host_id_disk |> Sanlk_disk.of_internal_t;
+    let of_internal_ptr p =
+      { name = getf !@p name;
+        host_id = getf !@p host_id;
+        flags = getf !@p flags;
+        host_id_disk = getf !@p host_id_disk |> addr |> Sanlk_disk.of_internal_ptr;
       }
 
-    let to_internal_t t =
-      let internal = make internal_t in
+    let to_internal_ptr t =
+      let internal = make internal in
       setf internal name t.name;
       setf internal host_id t.host_id;
       setf internal flags t.flags;
-      setf internal host_id_disk (Sanlk_disk.to_internal_t t.host_id_disk);
-      internal
+      setf internal host_id_disk (!@ (Sanlk_disk.to_internal_ptr t.host_id_disk));
+      addr internal
 
-    let t = view ~read:of_internal_t ~write:to_internal_t internal_t
+    let t = view ~read:of_internal_ptr ~write:to_internal_ptr (ptr internal)
   end
 
   module Sanlk_host = struct
@@ -254,34 +256,34 @@ module Bindings (F : Cstubs.FOREIGN) = struct
       flags : UInt32.t;
     }
 
-    type internal_t
-    let internal_t : internal_t structure typ = structure "sanlk_host"
-    let (-:) ty label = field internal_t label ty
+    type internal
+    let internal : internal structure typ = structure "sanlk_host"
+    let (-:) ty label = field internal label ty
     let host_id = uint64_t -: "host_id"
     let generation = uint64_t -: "generation"
     let timestamp = uint64_t -: "timestamp"
     let io_timeout = uint32_t -: "io_timeout"
     let flags = uint32_t -: "flags"
-    let () = seal internal_t
+    let () = seal internal
 
-    let of_internal_t internal =
-      { host_id = getf internal host_id;
-        generation = getf internal generation;
-        timestamp = getf internal timestamp;
-        io_timeout = getf internal io_timeout;
-        flags = getf internal flags;
+    let of_internal_ptr p =
+      { host_id = getf !@p host_id;
+        generation = getf !@p generation;
+        timestamp = getf !@p timestamp;
+        io_timeout = getf !@p io_timeout;
+        flags = getf !@p flags;
       }
 
-    let to_internal_t t =
-      let internal = make internal_t in
+    let to_internal_ptr t =
+      let internal = make internal in
       setf internal host_id t.host_id;
       setf internal generation t.generation;
       setf internal timestamp t.timestamp;
       setf internal io_timeout t.io_timeout;
       setf internal flags t.flags;
-      internal
+      addr internal
 
-    let t = view ~read:of_internal_t ~write:to_internal_t internal_t
+    let t = view ~read:of_internal_ptr ~write:to_internal_ptr (ptr internal)
   end
 
   (* add_lockspace returns:
@@ -291,7 +293,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
    * (the in-progress add may or may not succeed)
    * -EAGAIN: the lockspace is being removed  *)
   let sanlock_add_lockspace = foreign "sanlock_add_lockspace"
-    (ptr Sanlk_lockspace.t @-> uint32_t @-> returning int)
+    (Sanlk_lockspace.t @-> uint32_t @-> returning int)
 
   (* rem_lockspace returns:
    * 0: the lockspace has been removed successfully
@@ -302,10 +304,10 @@ module Bindings (F : Cstubs.FOREIGN) = struct
    * The sanlock daemon will kill any pids using the lockspace when the
    * lockspace is removed (unless UNUSED is set).  *)
   let sanlock_rem_lockspace = foreign "sanlock_rem_lockspace"
-    (ptr Sanlk_lockspace.t @-> uint32_t @-> returning int)
+    (Sanlk_lockspace.t @-> uint32_t @-> returning int)
 
   let sanlock_align = foreign "sanlock_align"
-    (ptr Sanlk_disk.t @-> returning int)
+    (Sanlk_disk.t @-> returning int)
 
   let sanlock_register = foreign "sanlock_register"
     (void @-> returning int)
@@ -314,10 +316,10 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     (int @-> uint32_t @-> returning int)
 
   let sanlock_acquire = foreign "sanlock_acquire"
-    (int @-> int @-> uint32_t @-> int @-> ptr (ptr Sanlk_resource.t) @-> ptr Sanlk_options.t @-> returning int)
+    (int @-> int @-> uint32_t @-> int @-> (ptr Sanlk_resource.t) @-> Sanlk_options.t @-> returning int)
 
   let sanlock_release = foreign "sanlock_release"
-    (int @-> int @-> uint32_t @-> int @-> ptr (ptr Sanlk_resource.t) @-> returning int)
+    (int @-> int @-> uint32_t @-> int @-> (ptr Sanlk_resource.t) @-> returning int)
 
   (* The following functions are used by current lvm2 tree (v2_02_128) but are
    * not available in libsanlock v2.2 (the version shipped with Ubuntu 14.04 *)
