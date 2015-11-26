@@ -28,7 +28,7 @@ distclean: setup.ml
 setup.data: setup.ml
 	ocaml setup.ml -configure $(CONFIGUREFLAGS)
 
-setup.ml: _oasis
+setup.ml: _oasis myocamlbuild.ml
 	./configure
 
 travis-coveralls.sh:
