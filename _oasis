@@ -13,7 +13,7 @@ Library sanlock
   Modules:          Sanlock
   InternalModules:  Ffi_generated, Ffi_generated_types
   CSources:         ffi_generated_stubs.c
-  CCLib:            -L/usr/lib/sanlock -L/usr/lib64 -lsanlock
+  CCLib:            -lsanlock_client
   CCOpt:            -I $pkg_ctypes_stubs
   ByteOpt:          -warn-error +1..45
   NativeOpt:        -warn-error +1..45
