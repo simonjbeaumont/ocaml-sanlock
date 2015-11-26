@@ -8,6 +8,57 @@ module Types (F: Cstubs.Types.TYPE) = struct
 
   let name_len = constant "SANLK_NAME_LEN" int
   let path_len = constant "SANLK_PATH_LEN" int
+
+  module Return_value = struct
+    let ok = constant "SANLK_OK" int
+    let none = constant "SANLK_NONE" int (* unused *)
+    let error = constant "SANLK_ERROR" int
+    let aio_timeout = constant "SANLK_AIO_TIMEOUT" int
+
+    (* run_ballot *)
+    let dblock_read = constant "SANLK_DBLOCK_READ" int
+    let dblock_write = constant "SANLK_DBLOCK_WRITE" int
+    let dblock_lver = constant "SANLK_DBLOCK_LVER" int
+    let dblock_mbal = constant "SANLK_DBLOCK_MBAL" int
+    let dblock_checksum = constant "SANLK_DBLOCK_CHECKSUM" int
+
+    (* verify_leader, leader_read, leader_write (paxos or delta)
+     * (when adding to list, check if it should be a corrupt_result()) *)
+    let leader_read = constant "SANLK_LEADER_READ" int
+    let leader_write = constant "SANLK_LEADER_WRITE" int
+    let leader_diff = constant "SANLK_LEADER_DIFF" int
+    let leader_magic = constant "SANLK_LEADER_MAGIC" int
+    let leader_version = constant "SANLK_LEADER_VERSION" int
+    let leader_sectorsize = constant "SANLK_LEADER_SECTORSIZE" int
+    let leader_lockspace = constant "SANLK_LEADER_LOCKSPACE" int
+    let leader_resource = constant "SANLK_LEADER_RESOURCE" int
+    let leader_numhosts = constant "SANLK_LEADER_NUMHOSTS" int
+    let leader_checksum = constant "SANLK_LEADER_CHECKSUM" int
+
+    (* paxos_lease_acquire *)
+    let acquire_lver = constant "SANLK_ACQUIRE_LVER" int
+    let acquire_lockspace = constant "SANLK_ACQUIRE_LOCKSPACE" int
+    let acquire_iddisk = constant "SANLK_ACQUIRE_IDDISK" int
+    let acquire_idlive = constant "SANLK_ACQUIRE_IDLIVE" int
+    let acquire_owned = constant "SANLK_ACQUIRE_OWNED" int
+    let acquire_other = constant "SANLK_ACQUIRE_OTHER" int
+    let acquire_shretry = constant "SANLK_ACQUIRE_SHRETRY" int
+
+    (* paxos_lease_release *)
+    let release_lver = constant "SANLK_RELEASE_LVER" int
+    let release_owner = constant "SANLK_RELEASE_OWNER" int
+
+    (* delta_lease_renew, delta_lease_acquire *)
+    let renew_owner = constant "SANLK_RENEW_OWNER" int
+    let renew_diff = constant "SANLK_RENEW_DIFF" int
+    let hostid_busy = constant "SANLK_HOSTID_BUSY" int
+
+    (* request_token *)
+    let request_magic = constant "SANLK_REQUEST_MAGIC" int
+    let request_version = constant "SANLK_REQUEST_VERSION" int
+    let request_old = constant "SANLK_REQUEST_OLD" int
+    let request_lver = constant "SANLK_REQUEST_LVER" int
+  end
 end
 
 module Bindings (F : Cstubs.FOREIGN) = struct
