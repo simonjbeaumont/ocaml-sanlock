@@ -20,10 +20,26 @@ let sleep s = Unix.select [] [] [] s |> ignore
 
 (* Test cases *)
 
+let check_sanlock_daemon () =
+  let pid_file = "/var/run/sanlock/sanlock.pid" in
+  let pid_ic = open_in pid_file in
+  let pid = input_line pid_ic in
+  close_in pid_ic;
+  if not (Sys.file_exists ("/proc/" ^ pid)) then begin
+    print_endline "error: sanlock daemon isn't running.";
+    exit 1;
+  end;
+  let sock_path = "/var/run/sanlock/sanlock.sock" in
+  try Unix.(access sock_path [ W_OK ])
+  with _ ->
+    print_endline "error: No access to sanlock socket. Restart with -U <user>";
+    exit 2
+
 let dummy_test =
   "This test is a placeholder" >:: fun () -> ()
 
 let _ =
+  check_sanlock_daemon ();
   let suite = "sanlock" >::: [
       dummy_test;
   ] in
