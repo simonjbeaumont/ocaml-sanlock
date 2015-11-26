@@ -14,7 +14,7 @@ module Types (F: Cstubs.Types.TYPE) = struct
     let add_async = constant "SANLK_ADD_ASYNC" uint32_t
   end
 
-  module Rem_flag = struct
+  module Remove_flag = struct
     let rem_async = constant "SANLK_REM_ASYNC" uint32_t
     let rem_unused = constant "SANLK_REM_UNUSED" uint32_t
   end

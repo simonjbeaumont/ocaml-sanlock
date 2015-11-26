@@ -15,6 +15,6 @@ let add_lockspace ?(async=false) lockspace =
   B.sanlock_add_lockspace lockspace flags |> check_rv
 
 let rem_lockspace ?(async=false) ?(unused=false) lockspace =
-  let add_flags = if async then T.Rem_flag.([ rem_async ]) else [] in
+  let add_flags = if async then T.Remove_flag.([ rem_async ]) else [] in
   let flags = crush_flags add_flags in
   B.sanlock_rem_lockspace lockspace flags |> check_rv
