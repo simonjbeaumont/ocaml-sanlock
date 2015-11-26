@@ -9,6 +9,15 @@ module Types (F: Cstubs.Types.TYPE) = struct
   let name_len = constant "SANLK_NAME_LEN" int
   let path_len = constant "SANLK_PATH_LEN" int
 
+  module Add_flag = struct
+    let add_async = constant "SANLK_ADD_ASYNC" uint32_t
+  end
+
+  module Rem_flag = struct
+    let rem_async = constant "SANLK_REM_ASYNC" uint32_t
+    let rem_unused = constant "SANLK_REM_UNUSED" uint32_t
+  end
+
   module Return_value = struct
     let ok = constant "SANLK_OK" int
     let none = constant "SANLK_NONE" int (* unused *)
@@ -275,9 +284,23 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     let t = view ~read:of_internal_t ~write:to_internal_t internal_t
   end
 
+  (* add_lockspace returns:
+   * 0: the lockspace has been added successfully
+   * -EEXIST: the lockspace already exists
+   * -EINPROGRESS: the lockspace is already in the process of being added
+   * (the in-progress add may or may not succeed)
+   * -EAGAIN: the lockspace is being removed  *)
   let sanlock_add_lockspace = foreign "sanlock_add_lockspace"
     (ptr Sanlk_lockspace.t @-> uint32_t @-> returning int)
 
+  (* rem_lockspace returns:
+   * 0: the lockspace has been removed successfully
+   * -EINPROGRESS: the lockspace is already in the process of being removed
+   * -ENOENT: lockspace not found
+   * -EBUSY: UNUSED was set and lockspace is being used
+   *
+   * The sanlock daemon will kill any pids using the lockspace when the
+   * lockspace is removed (unless UNUSED is set).  *)
   let sanlock_rem_lockspace = foreign "sanlock_rem_lockspace"
     (ptr Sanlk_lockspace.t @-> uint32_t @-> returning int)
 
