@@ -30,54 +30,56 @@ module Types (F: Cstubs.Types.TYPE) = struct
   end
 
   module Return_value = struct
-    let ok = constant "SANLK_OK" int
-    let none = constant "SANLK_NONE" int (* unused *)
-    let error = constant "SANLK_ERROR" int
-    let aio_timeout = constant "SANLK_AIO_TIMEOUT" int
+    let result_map = [
+      constant "SANLK_OK" int, "SANLK_OK";
+      constant "SANLK_NONE" int, "SANLK_NONE";  (* unused *)
+      constant "SANLK_ERROR" int, "SANLK_ERROR";
+      constant "SANLK_AIO_TIMEOUT" int, "SANLK_AIO_TIMEOUT";
 
-    (* run_ballot *)
-    let dblock_read = constant "SANLK_DBLOCK_READ" int
-    let dblock_write = constant "SANLK_DBLOCK_WRITE" int
-    let dblock_lver = constant "SANLK_DBLOCK_LVER" int
-    let dblock_mbal = constant "SANLK_DBLOCK_MBAL" int
-    let dblock_checksum = constant "SANLK_DBLOCK_CHECKSUM" int
+      (* run_ballot *)
+      constant "SANLK_DBLOCK_READ" int, "SANLK_DBLOCK_READ";
+      constant "SANLK_DBLOCK_WRITE" int, "SANLK_DBLOCK_WRITE";
+      constant "SANLK_DBLOCK_LVER" int, "SANLK_DBLOCK_LVER";
+      constant "SANLK_DBLOCK_MBAL" int, "SANLK_DBLOCK_MBAL";
+      constant "SANLK_DBLOCK_CHECKSUM" int, "SANLK_DBLOCK_CHECKSUM";
 
-    (* verify_leader, leader_read, leader_write (paxos or delta)
-     * (when adding to list, check if it should be a corrupt_result()) *)
-    let leader_read = constant "SANLK_LEADER_READ" int
-    let leader_write = constant "SANLK_LEADER_WRITE" int
-    let leader_diff = constant "SANLK_LEADER_DIFF" int
-    let leader_magic = constant "SANLK_LEADER_MAGIC" int
-    let leader_version = constant "SANLK_LEADER_VERSION" int
-    let leader_sectorsize = constant "SANLK_LEADER_SECTORSIZE" int
-    let leader_lockspace = constant "SANLK_LEADER_LOCKSPACE" int
-    let leader_resource = constant "SANLK_LEADER_RESOURCE" int
-    let leader_numhosts = constant "SANLK_LEADER_NUMHOSTS" int
-    let leader_checksum = constant "SANLK_LEADER_CHECKSUM" int
+      (* verify_leader, leader_read, leader_write (paxos or delta)
+       * (when adding to list, check if it should be a corrupt_result()) *)
+      constant "SANLK_LEADER_READ" int, "SANLK_LEADER_READ";
+      constant "SANLK_LEADER_WRITE" int, "SANLK_LEADER_WRITE";
+      constant "SANLK_LEADER_DIFF" int, "SANLK_LEADER_DIFF";
+      constant "SANLK_LEADER_MAGIC" int, "SANLK_LEADER_MAGIC";
+      constant "SANLK_LEADER_VERSION" int, "SANLK_LEADER_VERSION";
+      constant "SANLK_LEADER_SECTORSIZE" int, "SANLK_LEADER_SECTORSIZE";
+      constant "SANLK_LEADER_LOCKSPACE" int, "SANLK_LEADER_LOCKSPACE";
+      constant "SANLK_LEADER_RESOURCE" int, "SANLK_LEADER_RESOURCE";
+      constant "SANLK_LEADER_NUMHOSTS" int, "SANLK_LEADER_NUMHOSTS";
+      constant "SANLK_LEADER_CHECKSUM" int, "SANLK_LEADER_CHECKSUM";
 
-    (* paxos_lease_acquire *)
-    let acquire_lver = constant "SANLK_ACQUIRE_LVER" int
-    let acquire_lockspace = constant "SANLK_ACQUIRE_LOCKSPACE" int
-    let acquire_iddisk = constant "SANLK_ACQUIRE_IDDISK" int
-    let acquire_idlive = constant "SANLK_ACQUIRE_IDLIVE" int
-    let acquire_owned = constant "SANLK_ACQUIRE_OWNED" int
-    let acquire_other = constant "SANLK_ACQUIRE_OTHER" int
-    let acquire_shretry = constant "SANLK_ACQUIRE_SHRETRY" int
+      (* paxos_lease_acquire *)
+      constant "SANLK_ACQUIRE_LVER" int, "SANLK_ACQUIRE_LVER";
+      constant "SANLK_ACQUIRE_LOCKSPACE" int, "SANLK_ACQUIRE_LOCKSPACE";
+      constant "SANLK_ACQUIRE_IDDISK" int, "SANLK_ACQUIRE_IDDISK";
+      constant "SANLK_ACQUIRE_IDLIVE" int, "SANLK_ACQUIRE_IDLIVE";
+      constant "SANLK_ACQUIRE_OWNED" int, "SANLK_ACQUIRE_OWNED";
+      constant "SANLK_ACQUIRE_OTHER" int, "SANLK_ACQUIRE_OTHER";
+      constant "SANLK_ACQUIRE_SHRETRY" int, "SANLK_ACQUIRE_SHRETRY";
 
-    (* paxos_lease_release *)
-    let release_lver = constant "SANLK_RELEASE_LVER" int
-    let release_owner = constant "SANLK_RELEASE_OWNER" int
+      (* paxos_lease_release *)
+      constant "SANLK_RELEASE_LVER" int, "SANLK_RELEASE_LVER";
+      constant "SANLK_RELEASE_OWNER" int, "SANLK_RELEASE_OWNER";
 
-    (* delta_lease_renew, delta_lease_acquire *)
-    let renew_owner = constant "SANLK_RENEW_OWNER" int
-    let renew_diff = constant "SANLK_RENEW_DIFF" int
-    let hostid_busy = constant "SANLK_HOSTID_BUSY" int
+      (* delta_lease_renew, delta_lease_acquire *)
+      constant "SANLK_RENEW_OWNER" int, "SANLK_RENEW_OWNER";
+      constant "SANLK_RENEW_DIFF" int, "SANLK_RENEW_DIFF";
+      constant "SANLK_HOSTID_BUSY" int, "SANLK_HOSTID_BUSY";
 
-    (* request_token *)
-    let request_magic = constant "SANLK_REQUEST_MAGIC" int
-    let request_version = constant "SANLK_REQUEST_VERSION" int
-    let request_old = constant "SANLK_REQUEST_OLD" int
-    let request_lver = constant "SANLK_REQUEST_LVER" int
+      (* request_token *)
+      constant "SANLK_REQUEST_MAGIC" int, "SANLK_REQUEST_MAGIC";
+      constant "SANLK_REQUEST_VERSION" int, "SANLK_REQUEST_VERSION";
+      constant "SANLK_REQUEST_OLD" int, "SANLK_REQUEST_OLD";
+      constant "SANLK_REQUEST_LVER" int, "SANLK_REQUEST_LVER";
+    ]
   end
 end
 
