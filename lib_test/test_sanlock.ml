@@ -15,6 +15,9 @@ let with_temp_file f =
   let path = Filename.temp_file "test_sanlock" ".lock" in
   finally (fun () -> with_open_file path (f path)) (fun () -> Unix.unlink path)
 
+let is_valid_fd fd =
+  Unix.(try fstat fd |> ignore; true with Unix_error (EBADF, _, _) -> false)
+
 let sleep s = Unix.select [] [] [] s |> ignore
 (*BISECT-IGNORE-END*)
 
@@ -35,12 +38,16 @@ let check_sanlock_daemon () =
     print_endline "error: No access to sanlock socket. Restart with -U <user>";
     exit 2
 
-let dummy_test =
-  "This test is a placeholder" >:: fun () -> ()
+let test_register =
+  "Test we can register() with the sanlock daemon" >:: fun () ->
+  let fd = register () in
+  if not (is_valid_fd fd) then assert_string "register returned bad fd";
+  let fd' = register () in
+  if not (is_valid_fd fd') then assert_string "second register returned bad fd"
 
 let _ =
   check_sanlock_daemon ();
   let suite = "sanlock" >::: [
-      dummy_test;
+    test_register;
   ] in
   OUnit2.run_test_tt_main @@ ounit2_of_ounit1 suite

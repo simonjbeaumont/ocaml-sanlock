@@ -7,6 +7,9 @@ let crush_flags =
   Ffi_bindings.UInt32.(Infix.(
     List.fold_left (fun acc flag -> acc lor flag) zero))
 
+let int_of_fd : Unix.file_descr -> int = Obj.magic
+let fd_of_int : int -> Unix.file_descr = Obj.magic
+
 exception Sanlk_error of string
 let check_rv rv =
   if rv < 0 then
@@ -26,7 +29,10 @@ let rem_lockspace ?(async=false) ?(unused=false) lockspace =
 
 let align = B.sanlock_align
 
-let register = B.sanlock_register
+let register () =
+  let sock_fd = B.sanlock_register () in
+  check_rv sock_fd;
+  fd_of_int sock_fd
 
 let restrict ?(restrict) sock =
   let restrict_flags = match restrict with
