@@ -86,9 +86,35 @@ end
 module Bindings (F : Cstubs.FOREIGN) = struct
   open F
 
+  module Views = struct
+
+    let max_path_len = 1024 (* TODO: get from type gen above *)
+    let max_name_len = 4400 (* TODO: get from type gen above *)
+
+    let string_of_char_array a =
+      CArray.(start a |> string_from_ptr ~length:(length a))
+
+    let char_array_of_string max_length s =
+      (* TODO: should we raise an exception here? *)
+      let trimmed = try String.sub s 0 (max_length - 1) with _ -> s in
+      let len = String.length trimmed in
+      let p = allocate_n char (len + 1) in
+      String.iteri (fun i c -> (p +@ i) <-@ c) trimmed;
+      p +@ len <-@ '\000';
+      CArray.from_ptr p len
+
+    let sanlk_path =
+      view ~read:string_of_char_array ~write:(char_array_of_string max_path_len)
+        (array max_path_len char)
+
+    let sanlk_name =
+      view ~read:string_of_char_array ~write:(char_array_of_string max_name_len)
+        (array max_name_len char)
+  end
+
   module Sanlk_disk = struct
     type t = {
-      path : string option;
+      path : string;
       offset : UInt64.t;
       pad1 : UInt32.t;
       pad2 : UInt32.t;
@@ -97,7 +123,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     type internal
     let internal : internal structure typ = structure "sanlk_disk"
     let (-:) ty label = field internal label ty
-    let path = string_opt -: "path"
+    let path = Views.sanlk_path -: "path" (* is guarenteed \0 terminated *)
     let offset = uint64_t -: "offset"
     let pad1 = uint32_t -: "pad1"
     let pad2 = uint32_t -: "pad2"
@@ -123,8 +149,8 @@ module Bindings (F : Cstubs.FOREIGN) = struct
 
   module Sanlk_resource = struct
     type t = {
-      lockspace_name : string option;
-      name : string option;
+      lockspace_name : string;
+      name : string;
       lver : UInt64.t;
       data64 : UInt64.t;
       data32 : UInt32.t;
@@ -137,9 +163,8 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     type internal
     let internal : internal structure typ = structure "sanlk_resource"
     let (-:) ty label = field internal label ty
-    (* TODO: It would be nice to use a char array of length SANLK_NAME_LEN above *)
-    let lockspace_name = string_opt -: "lockspace_name" (* terminating \0 not required *)
-    let name = string_opt -: "name"                     (* terminating \0 not required *)
+    let lockspace_name = Views.sanlk_name -: "lockspace_name" (* terminating \0 not required *)
+    let name = Views.sanlk_name -: "name"                     (* terminating \0 not required *)
     let lver = uint64_t -: "lver"     (* use with SANLK_RES_LVER *)
     let data64 = uint64_t -: "data64" (* per-resource command-specific data *)
     let data32 = uint32_t -: "data32" (* per-resource command-specific data *)
@@ -191,7 +216,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
 
   module Sanlk_options = struct
     type t = {
-      name : string option;
+      name : string;
       flags : UInt32.t;
       len : UInt32.t;
       str : char list;
@@ -200,7 +225,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     type internal
     let internal : internal structure typ = structure "sanlk_options"
     let (-:) ty label = field internal label ty
-    let name = string_opt -: "name"
+    let name = Views.sanlk_name -: "name"
     let flags = uint32_t -: "flags"
     let len = uint32_t -: "len"
     (* followed by len bytes (migration input will use this) *)
@@ -227,7 +252,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
 
   module Sanlk_lockspace = struct
     type t = {
-      name : string option;
+      name : string;
       host_id : UInt64.t;
       flags : UInt32.t;
       host_id_disk : Sanlk_disk.t;
@@ -236,7 +261,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     type internal
     let internal : internal structure typ = structure "sanlk_lockspace"
     let (-:) ty label = field internal label ty
-    let name = string_opt -: "name"
+    let name = Views.sanlk_name -: "name"
     let host_id = uint64_t -: "host_id"
     let flags = uint32_t -: "flags"
     let host_id_disk = Sanlk_disk.internal -: "sanlk_disk"
