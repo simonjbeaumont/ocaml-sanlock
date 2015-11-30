@@ -3,8 +3,13 @@ open Ctypes
 module B = Ffi_bindings.Bindings(Ffi_generated)
 module T = Ffi_bindings.Types(Ffi_generated_types)
 
+module UInt32 = Ffi_bindings.UInt32
+module UInt64 = Ffi_bindings.UInt64
+
+module Disk = B.Sanlk_disk
+
 let crush_flags =
-  Ffi_bindings.UInt32.(Infix.(
+  UInt32.(Infix.(
     List.fold_left (fun acc flag -> acc lor flag) zero))
 
 let int_of_fd : Unix.file_descr -> int = Obj.magic
@@ -27,7 +32,10 @@ let rem_lockspace ?(async=false) ?(unused=false) lockspace =
   let flags = crush_flags add_flags in
   B.sanlock_rem_lockspace lockspace flags |> check_rv
 
-let align = B.sanlock_align
+let align disk =
+  let alignment = B.sanlock_align disk in
+  check_rv alignment;
+  alignment
 
 let register () =
   let sock_fd = B.sanlock_register () in

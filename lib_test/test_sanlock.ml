@@ -45,9 +45,22 @@ let test_register =
   let fd' = register () in
   if not (is_valid_fd fd') then assert_string "second register returned bad fd"
 
+let test_align =
+  "Test that align() gives sensible alignment values" >:: fun () ->
+  with_temp_file (fun path _ ->
+    let disk = {
+      Disk.path;
+      offset = UInt64.of_int 0;
+      pad1 = UInt32.of_int 0;
+      pad2 = UInt32.of_int 0;
+    } in
+    assert_equal ~msg:"Expected 1MB alignment" (1024*1024) (align disk)
+  )
+
 let _ =
   check_sanlock_daemon ();
   let suite = "sanlock" >::: [
     test_register;
+    test_align;
   ] in
   OUnit2.run_test_tt_main @@ ounit2_of_ounit1 suite
