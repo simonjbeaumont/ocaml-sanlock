@@ -65,8 +65,7 @@ let test_align =
 let test_init_lockspace =
   "Test we can initialise a lockspace" >:: fun () ->
   with_sanlock_disk (fun disk ->
-    let offset = align disk |> UInt64.of_int in
-    init_lockspace "lockspace1" { disk with Disk.offset }
+    init_lockspace "lockspace1" disk
   )
 
 let test_init_resource =
