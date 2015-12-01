@@ -38,6 +38,17 @@ let check_sanlock_daemon () =
     print_endline "error: No access to sanlock socket. Restart with -U <user>";
     exit 2
 
+let with_sanlock_disk f =
+  with_temp_file (fun path _ ->
+    let disk = {
+      Disk.path;
+      offset = UInt64.of_int 0;
+      pad1 = UInt32.of_int 0;
+      pad2 = UInt32.of_int 0;
+    } in
+    f disk
+  )
+
 let test_register =
   "Test we can register() with the sanlock daemon" >:: fun () ->
   let fd = register () in
@@ -47,14 +58,15 @@ let test_register =
 
 let test_align =
   "Test that align() gives sensible alignment values" >:: fun () ->
-  with_temp_file (fun path _ ->
-    let disk = {
-      Disk.path;
-      offset = UInt64.of_int 0;
-      pad1 = UInt32.of_int 0;
-      pad2 = UInt32.of_int 0;
-    } in
+  with_sanlock_disk (fun disk ->
     assert_equal ~msg:"Expected 1MB alignment" (1024*1024) (align disk)
+  )
+
+let test_init_lockspace =
+  "Test we can initialise a lockspace" >:: fun () ->
+  with_sanlock_disk (fun disk ->
+    let offset = align disk |> UInt64.of_int in
+    init_lockspace "lockspace1" { disk with Disk.offset }
   )
 
 let _ =
@@ -62,5 +74,6 @@ let _ =
   let suite = "sanlock" >::: [
     test_register;
     test_align;
+    test_init_lockspace;
   ] in
   OUnit2.run_test_tt_main @@ ounit2_of_ounit1 suite

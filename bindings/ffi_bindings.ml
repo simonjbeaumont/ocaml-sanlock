@@ -89,27 +89,26 @@ module Bindings (F : Cstubs.FOREIGN) = struct
   module Views = struct
 
     let max_path_len = 1024 (* TODO: get from type gen above *)
-    let max_name_len = 4400 (* TODO: get from type gen above *)
+    let max_name_len = 48 (* TODO: get from type gen above *)
 
     let string_of_char_array a =
       CArray.(start a |> string_from_ptr ~length:(length a))
 
-    let char_array_of_string max_length s =
-      (* TODO: should we raise an exception here? *)
-      let trimmed = try String.sub s 0 (max_length - 1) with _ -> s in
-      let len = String.length trimmed in
-      let p = allocate_n char (len + 1) in
-      String.iteri (fun i c -> (p +@ i) <-@ c) trimmed;
-      p +@ len <-@ '\000';
-      CArray.from_ptr p len
+    let char_array_of_string max_length null s =
+      (* Note: this function currently transparently truncates... *)
+      let trimmed = try String.sub s 0 max_length with _ -> s in
+      let char_array = CArray.(make char ~initial:'\000' max_length) in
+      String.iteri (fun i c -> CArray.set char_array i c) trimmed;
+      if null then CArray.set char_array (max_length - 1) '\000';
+      char_array
 
     let sanlk_path =
-      view ~read:string_of_char_array ~write:(char_array_of_string max_path_len)
-        (array max_path_len char)
+      view ~write:(char_array_of_string max_path_len true)
+        ~read:string_of_char_array (array max_path_len char)
 
     let sanlk_name =
-      view ~read:string_of_char_array ~write:(char_array_of_string max_name_len)
-        (array max_name_len char)
+      view ~write:(char_array_of_string max_name_len false)
+        ~read:string_of_char_array (array max_name_len char)
   end
 
   module Sanlk_disk = struct
@@ -264,7 +263,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     let name = Views.sanlk_name -: "name"
     let host_id = uint64_t -: "host_id"
     let flags = uint32_t -: "flags"
-    let host_id_disk = Sanlk_disk.internal -: "sanlk_disk"
+    let host_id_disk = Sanlk_disk.internal -: "host_id_disk"
     let () = seal internal
 
     let of_internal_ptr p =
@@ -324,6 +323,15 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     let t = view ~read:of_internal_ptr ~write:to_internal_ptr (ptr internal)
   end
 
+  (* sanlock_init(struct sanlk_lockspace *ls, struct sanlk_resource *res,
+                  int max_hosts, int num_hosts);
+   * Ask sanlock daemon to initialize disk space.
+   * Use max_hosts = 0 for default value.
+   * Use num_hosts = 0 for default value.
+   * Provide either lockspace or resource, not both  *)
+  let sanlock_init_lockspace = foreign "sanlock_init"
+    (Sanlk_lockspace.t @-> ptr void @-> int @-> int @-> returning int)
+
   (* add_lockspace returns:
    * 0: the lockspace has been added successfully
    * -EEXIST: the lockspace already exists
@@ -344,6 +352,8 @@ module Bindings (F : Cstubs.FOREIGN) = struct
   let sanlock_rem_lockspace = foreign "sanlock_rem_lockspace"
     (Sanlk_lockspace.t @-> uint32_t @-> returning int)
 
+  (* Returns the alignment in bytes required by sanlock_init()
+   * (1MB for disks with 512 sectors, 8MB for disks with 4096 sectors)  *)
   let sanlock_align = foreign "sanlock_align"
     (Sanlk_disk.t @-> returning int)
 

@@ -22,6 +22,15 @@ let check_rv rv =
     with Not_found ->
       raise (Sanlk_error Unix.(error_message (EUNKNOWNERR (abs rv))))
 
+let init_lockspace ?(max_hosts=0) ?(num_hosts=0) name host_id_disk =
+  let ls = {
+    B.Sanlk_lockspace.name;
+    host_id = UInt64.zero;
+    flags = UInt32.zero;
+    host_id_disk;
+  } in
+  B.sanlock_init_lockspace ls null max_hosts num_hosts |> check_rv
+
 let add_lockspace ?(async=false) lockspace =
   let add_flags = if async then T.Add_flag.([ add_async ]) else [] in
   let flags = crush_flags add_flags in
