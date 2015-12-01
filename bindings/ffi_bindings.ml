@@ -229,23 +229,31 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     let name = Views.sanlk_name -: "name"
     let flags = uint32_t -: "flags"
     let len = uint32_t -: "len"
-    (* followed by len bytes (migration input will use this) *)
-    let str = (array 0 char) -: "str"
+    (* followed by len bytes (flexible array member) *)
+    let str = (array 0 char) -: "str" (* see view functions *)
     let () = seal internal
 
     let of_internal_ptr p =
+      let str_len = getf !@p len |> UInt32.to_int in
+      let str_list =
+        let arr_start = getf !@p str |> CArray.start in
+        CArray.from_ptr arr_start str_len |> CArray.to_list in
       { name = getf !@p name;
         flags = getf !@p flags;
         len = getf !@p len;
-        str = getf !@p str |> CArray.to_list;
+        str = str_list;
       }
 
     let to_internal_ptr t =
-      let internal = make internal in
+      let size = (sizeof internal + sizeof char * List.length t.str) in
+      let internal =
+        allocate_n (abstract ~name:"" ~size ~alignment:1) 1
+        |> to_voidp |> from_voidp internal |> (!@) in
       setf internal name t.name;
       setf internal flags t.flags;
       setf internal len t.len;
-      setf internal str CArray.(of_list char t.str);
+      let str_arr = getf internal str in
+      List.iteri (CArray.unsafe_set str_arr) t.str;
       addr internal
 
     let t = view ~read:of_internal_ptr ~write:to_internal_ptr (ptr internal)
