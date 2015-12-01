@@ -128,20 +128,23 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     let pad2 = uint32_t -: "pad2"
     let () = seal internal
 
-    let of_internal_ptr p =
-      { path = getf !@p path;
-        offset = getf !@p offset;
-        pad1 = getf !@p pad1;
-        pad2 = getf !@p pad2;
+    let of_internal i =
+      { path = getf i path;
+        offset = getf i offset;
+        pad1 = getf i pad1;
+        pad2 = getf i pad2;
       }
 
-    let to_internal_ptr t =
+    let to_internal t =
       let internal = make internal in
       setf internal path t.path;
       setf internal offset t.offset;
       setf internal pad1 t.pad1;
       setf internal pad2 t.pad2;
-      addr internal
+      internal
+
+    let of_internal_ptr p = of_internal !@p
+    let to_internal_ptr t = to_internal t |> addr
 
     let t = view ~read:of_internal_ptr ~write:to_internal_ptr (ptr internal)
   end
@@ -179,8 +182,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
       let disks_list =
         let arr_start = getf !@p disks |> CArray.start in
         CArray.from_ptr arr_start disks_len |> CArray.to_list
-        |> List.map addr
-        |> List.map (Sanlk_disk.of_internal_ptr) in
+        |> List.map (Sanlk_disk.of_internal) in
       { lockspace_name = getf !@p lockspace_name;
         name = getf !@p name;
         lver = getf !@p lver;
@@ -206,8 +208,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
       setf internal flags t.flags;
       setf internal num_disks t.num_disks;
       let disks_arr = getf internal disks in
-      List.map Sanlk_disk.to_internal_ptr t.disks
-      |> List.map (!@)
+      List.map Sanlk_disk.to_internal t.disks
       |> List.iteri (CArray.unsafe_set disks_arr);
       addr internal
 
