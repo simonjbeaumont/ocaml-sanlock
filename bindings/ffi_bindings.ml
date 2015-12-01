@@ -170,15 +170,15 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     let unused = uint32_t -: "unused"
     let flags = uint32_t -: "flags"   (* SANLK_RES_ *)
     let num_disks = uint32_t -: "num_disks"
-    (* followed by num_disks sanlk_disk structs *)
-    let disks = ptr Sanlk_disk.internal -: "disks"
+    (* followed by num_disks sanlk_disk structs (flexible array member) *)
+    let disks = array 0 Sanlk_disk.internal -: "disks" (* see view functions *)
     let () = seal internal
 
     let of_internal_ptr p =
-      let disks =
-        let disks_ptr = getf !@p disks in
-        let disks_len = getf !@p num_disks |> UInt32.to_int in
-        CArray.(from_ptr disks_ptr disks_len |> to_list)
+      let disks_len = getf !@p num_disks |> UInt32.to_int in
+      let disks_list =
+        let arr_start = getf !@p disks |> CArray.start in
+        CArray.from_ptr arr_start disks_len |> CArray.to_list
         |> List.map addr
         |> List.map (Sanlk_disk.of_internal_ptr) in
       { lockspace_name = getf !@p lockspace_name;
@@ -189,11 +189,14 @@ module Bindings (F : Cstubs.FOREIGN) = struct
         unused = getf !@p unused;
         flags = getf !@p flags;
         num_disks = getf !@p num_disks;
-        disks;
+        disks = disks_list;
       }
 
     let to_internal_ptr t =
-      let internal = make internal in
+      let size = (sizeof internal + sizeof Sanlk_disk.internal * List.length t.disks) in
+      let internal =
+        allocate_n (abstract ~name:"" ~size ~alignment:1) 1
+        |> to_voidp |> from_voidp internal |> (!@) in
       setf internal lockspace_name t.lockspace_name;
       setf internal name t.name;
       setf internal lver t.lver;
@@ -202,12 +205,10 @@ module Bindings (F : Cstubs.FOREIGN) = struct
       setf internal unused t.unused;
       setf internal flags t.flags;
       setf internal num_disks t.num_disks;
-      let disks_ptr =
-        List.map Sanlk_disk.to_internal_ptr t.disks
-        |> List.map (!@)
-        |> CArray.of_list Sanlk_disk.internal
-        |> CArray.start in
-      setf internal disks disks_ptr;
+      let disks_arr = getf internal disks in
+      List.map Sanlk_disk.to_internal_ptr t.disks
+      |> List.map (!@)
+      |> List.iteri (CArray.unsafe_set disks_arr);
       addr internal
 
     let t = view ~read:of_internal_ptr ~write:to_internal_ptr (ptr internal)
