@@ -69,11 +69,22 @@ let test_init_lockspace =
     init_lockspace "lockspace1" { disk with Disk.offset }
   )
 
+let test_init_resource =
+  "Test we can initialise a resource" >:: fun () ->
+  with_sanlock_disk (fun disk ->
+    init_lockspace "lockspace1" disk;
+    let offset = align disk |> UInt64.of_int in
+    init_resource "lockspace1" "resource1" [{ disk with Disk.offset }];
+    (* check we can call with multiple disks *)
+    init_resource "lockspace1" "resource1" [ disk; disk; disk ]
+  )
+
 let _ =
   check_sanlock_daemon ();
   let suite = "sanlock" >::: [
     test_register;
     test_align;
     test_init_lockspace;
+    test_init_resource;
   ] in
   OUnit2.run_test_tt_main @@ ounit2_of_ounit1 suite

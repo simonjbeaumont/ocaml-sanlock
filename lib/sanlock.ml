@@ -60,6 +60,20 @@ let restrict ?(restrict) sock =
   let flags = crush_flags restrict_flags in
   B.sanlock_restrict sock flags |> check_rv
 
+let init_resource ?(max_hosts=0) ?(num_hosts=0) name lockspace disks =
+  let res = {
+    B.Sanlk_resource.lockspace_name = lockspace;
+    name;
+    lver = UInt64.zero;
+    data64 = UInt64.zero;
+    data32 = UInt32.zero;
+    unused = UInt32.zero;
+    flags = UInt32.zero;
+    num_disks = List.length disks |> UInt32.of_int;
+    disks;
+  } in
+  B.sanlock_init_resource null res max_hosts num_hosts |> check_rv
+
 let acquire sock resources options =
   let pid = 0 in  (* we're using sock > -1 as obtained from register() *)
   let flags = crush_flags [] in   (* No flags for acuqire despite prototype *)

@@ -333,6 +333,9 @@ module Bindings (F : Cstubs.FOREIGN) = struct
   let sanlock_init_lockspace = foreign "sanlock_init"
     (Sanlk_lockspace.t @-> ptr void @-> int @-> int @-> returning int)
 
+  let sanlock_init_resource = foreign "sanlock_init"
+    (ptr void @-> Sanlk_resource.t @-> int @-> int @-> returning int)
+
   (* add_lockspace returns:
    * 0: the lockspace has been added successfully
    * -EEXIST: the lockspace already exists
