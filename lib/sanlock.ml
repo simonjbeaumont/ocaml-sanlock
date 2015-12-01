@@ -24,13 +24,16 @@ let check_rv rv =
     with Not_found ->
       raise (Sanlk_error Unix.(error_message (EUNKNOWNERR (abs rv))))
 
-let init_lockspace ?(offset=0L) ?(max_hosts=0) ?(num_hosts=0) name path =
-  let host_id_disk = {
-    B.Sanlk_disk.path;
+let make_disk ?(offset=0L) path =
+  { B.Sanlk_disk.path;
     offset = UInt64.of_int64 offset;
     pad1 = UInt32.of_int 0;
     pad2 = UInt32.of_int 0;
-  } in
+  }
+
+
+let init_lockspace ?(offset=0L) ?(max_hosts=0) ?(num_hosts=0) name path =
+  let host_id_disk = make_disk ~offset path in
   let ls = {
     B.Sanlk_lockspace.name;
     host_id = UInt64.zero;
@@ -53,13 +56,7 @@ let rem_lockspace ?(async=false) ?(unused=false) lockspace host_id =
   B.sanlock_rem_lockspace ls flags |> check_rv
 
 let get_alignment path =
-  let disk = {
-    B.Sanlk_disk.path;
-    offset = UInt64.zero;
-    pad1 = UInt32.of_int 0;
-    pad2 = UInt32.of_int 0;
-  } in
-  let alignment = B.sanlock_align disk in
+  let alignment = B.sanlock_align (make_disk path) in
   check_rv alignment;
   Int64.of_int alignment
 
@@ -79,13 +76,7 @@ let restrict ?(restrict) sock =
 
 let init_resource ?(max_hosts=0) ?(num_hosts=0) lockspace disk_offsets name =
   let disks =
-    List.map (fun (path, offset) ->
-      { B.Sanlk_disk.path;
-        offset = UInt64.of_int64 offset;
-        pad1 = UInt32.of_int 0;
-        pad2 = UInt32.of_int 0;
-      }
-    ) disk_offsets in
+    List.map (fun (path, offset) -> make_disk ~offset path) disk_offsets in
   let res = {
     B.Sanlk_resource.lockspace_name = lockspace.B.Sanlk_lockspace.name;
     name;
