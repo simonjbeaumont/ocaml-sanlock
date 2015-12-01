@@ -6,7 +6,9 @@ module T = Ffi_bindings.Types(Ffi_generated_types)
 module UInt32 = Ffi_bindings.UInt32
 module UInt64 = Ffi_bindings.UInt64
 
-module Disk = B.Sanlk_disk
+type lockspace = B.Sanlk_lockspace.t
+type resource = B.Sanlk_resource.t
+type handle = Unix.file_descr
 
 let crush_flags =
   UInt32.(Infix.(
@@ -22,29 +24,44 @@ let check_rv rv =
     with Not_found ->
       raise (Sanlk_error Unix.(error_message (EUNKNOWNERR (abs rv))))
 
-let init_lockspace ?(max_hosts=0) ?(num_hosts=0) name host_id_disk =
+let init_lockspace ?(offset=0L) ?(max_hosts=0) ?(num_hosts=0) name path =
+  let host_id_disk = {
+    B.Sanlk_disk.path;
+    offset = UInt64.of_int64 offset;
+    pad1 = UInt32.of_int 0;
+    pad2 = UInt32.of_int 0;
+  } in
   let ls = {
     B.Sanlk_lockspace.name;
     host_id = UInt64.zero;
     flags = UInt32.zero;
     host_id_disk;
   } in
-  B.sanlock_init_lockspace ls null max_hosts num_hosts |> check_rv
+  B.sanlock_init_lockspace ls null max_hosts num_hosts |> check_rv;
+  ls
 
-let add_lockspace ?(async=false) lockspace =
+let add_lockspace ?(async=false) lockspace host_id =
+  let ls = { lockspace with B.Sanlk_lockspace.host_id = UInt64.of_int host_id } in
   let add_flags = if async then T.Add_flag.([ add_async ]) else [] in
   let flags = crush_flags add_flags in
-  B.sanlock_add_lockspace lockspace flags |> check_rv
+  B.sanlock_add_lockspace ls flags |> check_rv
 
-let rem_lockspace ?(async=false) ?(unused=false) lockspace =
+let rem_lockspace ?(async=false) ?(unused=false) lockspace host_id =
+  let ls = { lockspace with B.Sanlk_lockspace.host_id = UInt64.of_int host_id } in
   let add_flags = if async then T.Remove_flag.([ rem_async ]) else [] in
   let flags = crush_flags add_flags in
-  B.sanlock_rem_lockspace lockspace flags |> check_rv
+  B.sanlock_rem_lockspace ls flags |> check_rv
 
-let align disk =
+let get_alignment path =
+  let disk = {
+    B.Sanlk_disk.path;
+    offset = UInt64.zero;
+    pad1 = UInt32.of_int 0;
+    pad2 = UInt32.of_int 0;
+  } in
   let alignment = B.sanlock_align disk in
   check_rv alignment;
-  alignment
+  Int64.of_int alignment
 
 let register () =
   let sock_fd = B.sanlock_register () in
@@ -60,9 +77,17 @@ let restrict ?(restrict) sock =
   let flags = crush_flags restrict_flags in
   B.sanlock_restrict sock flags |> check_rv
 
-let init_resource ?(max_hosts=0) ?(num_hosts=0) name lockspace disks =
+let init_resource ?(max_hosts=0) ?(num_hosts=0) lockspace disk_offsets name =
+  let disks =
+    List.map (fun (path, offset) ->
+      { B.Sanlk_disk.path;
+        offset = UInt64.of_int64 offset;
+        pad1 = UInt32.of_int 0;
+        pad2 = UInt32.of_int 0;
+      }
+    ) disk_offsets in
   let res = {
-    B.Sanlk_resource.lockspace_name = lockspace;
+    B.Sanlk_resource.lockspace_name = lockspace.B.Sanlk_lockspace.name;
     name;
     lver = UInt64.zero;
     data64 = UInt64.zero;
@@ -72,7 +97,8 @@ let init_resource ?(max_hosts=0) ?(num_hosts=0) name lockspace disks =
     num_disks = List.length disks |> UInt32.of_int;
     disks;
   } in
-  B.sanlock_init_resource null res max_hosts num_hosts |> check_rv
+  B.sanlock_init_resource null res max_hosts num_hosts |> check_rv;
+  res
 
 let acquire sock resources options =
   let pid = 0 in  (* we're using sock > -1 as obtained from register() *)
