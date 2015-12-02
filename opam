@@ -26,9 +26,9 @@ depends: [
 ]
 available: [ocaml-version >= "4.01.0" & os = "linux"]
 depexts: [
-  [["debian"] ["hwdata" "libsanlock-dev"]]
-  [["ubuntu"] ["hwdata" "libsanlock-dev"]]
-  [["centos"] ["hwdata" "sanlock-devel"]]
+  [["debian"] ["libsanlock-dev"]]
+  [["ubuntu"] ["libsanlock-dev"]]
+  [["centos"] ["sanlock-devel"]]
 ]
 post-messages: [
   "This package requires libsanlock-dev to be installed on your system" {failure & (os = "debian")}
