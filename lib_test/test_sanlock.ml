@@ -62,8 +62,8 @@ let test_add_rem_lockspace =
   with_temp_file (fun path _ ->
     let ls = init_lockspace "lockspace1" path in
     let host_id = 1 in
-    add_lockspace ls host_id;
-    rem_lockspace ls host_id;
+    let m = add_lockspace ls host_id in
+    rem_lockspace m
   )
 
 let test_init_resource =
@@ -75,17 +75,24 @@ let test_init_resource =
   )
 
 let test_acquire_release =
-  "Test we can acquire a resource lock" >:: fun () ->
+  "Test acquiring a resource blocks other attempts to acquire it" >:: fun () ->
   with_temp_file (fun path _ ->
     let ls = init_lockspace "lockspace1" path in
     let offset = get_alignment path in
-    let res = init_resource ls [(path, offset)] "resource1" in
-    let host_id = 1 in
-    add_lockspace ls host_id;
-    let handle = register () in
-    acquire handle res;
-    release handle res;
-    rem_lockspace ls host_id
+    let res1 = init_resource ls [(path, Int64.mul 1L offset)] "resource1" in
+    let res2 = init_resource ls [(path, Int64.mul 2L offset)] "resource2" in
+    let m = add_lockspace ls 1 in
+    let h = register () in
+    acquire h res1;
+    acquire h res2;
+    assert_raises (Sanlk_error(Unix.(error_message EEXIST))) (fun () ->
+      acquire h res1
+    );
+    release h res1;
+    acquire h res1;
+    release h res1;
+    release h res2;
+    rem_lockspace m;
   )
 
 let _ =

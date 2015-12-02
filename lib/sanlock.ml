@@ -7,6 +7,7 @@ module UInt32 = Ffi_bindings.UInt32
 module UInt64 = Ffi_bindings.UInt64
 
 type lockspace = B.Sanlk_lockspace.t
+type lockspace_membership = B.Sanlk_lockspace.t
 type resource = B.Sanlk_resource.t
 type handle = Unix.file_descr
 
@@ -53,13 +54,13 @@ let add_lockspace ?(async=false) lockspace host_id =
   let ls = { lockspace with B.Sanlk_lockspace.host_id = UInt64.of_int host_id } in
   let add_flags = if async then T.Add_flag.([ add_async ]) else [] in
   let flags = crush_flags add_flags in
-  B.sanlock_add_lockspace ls flags |> check_rv
+  B.sanlock_add_lockspace ls flags |> check_rv;
+  ls
 
-let rem_lockspace ?(async=false) ?(unused=false) lockspace host_id =
-  let ls = { lockspace with B.Sanlk_lockspace.host_id = UInt64.of_int host_id } in
+let rem_lockspace ?(async=false) ?(unused=false) lockspace =
   let add_flags = if async then T.Remove_flag.([ rem_async ]) else [] in
   let flags = crush_flags add_flags in
-  B.sanlock_rem_lockspace ls flags |> check_rv
+  B.sanlock_rem_lockspace lockspace flags |> check_rv
 
 let get_alignment path =
   let alignment = B.sanlock_align (make_disk path) in
