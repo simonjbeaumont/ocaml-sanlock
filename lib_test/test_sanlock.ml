@@ -35,7 +35,7 @@ let check_sanlock_daemon () =
   let sock_path = "/var/run/sanlock/sanlock.sock" in
   try Unix.(access sock_path [ W_OK ])
   with _ ->
-    print_endline "error: No access to sanlock socket. Restart with -U <user>";
+    print_endline "error: No access to sanlock socket. Restart daemon with -U $USER";
     exit 2
 
 let test_register =
