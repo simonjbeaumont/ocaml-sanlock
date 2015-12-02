@@ -13,3 +13,4 @@ val register : unit -> handle
 val init_resource : ?max_hosts:int -> ?num_hosts:int -> lockspace -> (string * int64) list -> string -> resource
 val acquire : ?shared:bool -> handle -> resource -> unit
 val release : handle -> resource -> unit
+val restrict : handle -> [< `All | `Sigkill | `Sigterm ] -> unit

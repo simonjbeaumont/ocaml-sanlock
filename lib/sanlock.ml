@@ -72,12 +72,12 @@ let register () =
   check_rv sock_fd;
   fd_of_int sock_fd
 
-let restrict ?(restrict) sock =
+let restrict handle restrict =
+  let sock = int_of_fd handle in
   let restrict_flags = match restrict with
-  | Some `All -> [ T.Restrict_flag.restrict_all ]
-  | Some `Sigkill -> [ T.Restrict_flag.restrict_sigkill ]
-  | Some `Sigterm -> [ T.Restrict_flag.restrict_sigterm ]
-  | None -> [] in
+  | `All -> [ T.Restrict_flag.restrict_all ]
+  | `Sigkill -> [ T.Restrict_flag.restrict_sigkill ]
+  | `Sigterm -> [ T.Restrict_flag.restrict_sigterm ] in
   let flags = crush_flags restrict_flags in
   B.sanlock_restrict sock flags |> check_rv
 

@@ -95,6 +95,22 @@ let test_acquire_release =
     rem_lockspace m;
   )
 
+let test_signal_on_rem_lockspace =
+  "Test we get a signal on rem_lockspace if we're holding a lock" >:: fun () ->
+  with_temp_file (fun path _ ->
+    let ls = init_lockspace "lockspace1" path in
+    let offset = get_alignment path in
+    let res = init_resource ls [(path, Int64.mul 1L offset)] "resource1" in
+    let m = add_lockspace ls 1 in
+    let h = register () in
+    acquire h res;
+    restrict h `Sigkill;
+    try
+      Sys.(set_signal sigterm (Signal_handle (fun _ -> failwith "ok")));
+      rem_lockspace m;
+    with Failure("ok") -> ()
+  )
+
 let _ =
   check_sanlock_daemon ();
   let suite = "sanlock" >::: [
@@ -104,5 +120,6 @@ let _ =
     test_init_resource;
     test_add_rem_lockspace;
     test_acquire_release;
+    test_signal_on_rem_lockspace;
   ] in
   OUnit2.run_test_tt_main @@ ounit2_of_ounit1 suite
