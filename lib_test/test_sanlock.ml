@@ -57,6 +57,15 @@ let test_init_lockspace =
     init_lockspace "lockspace1" path |> ignore
   )
 
+let test_add_rem_lockspace =
+  "Test we can join and leave a lockspace" >:: fun () ->
+  with_temp_file (fun path _ ->
+    let ls = init_lockspace "lockspace1" path in
+    let host_id = 1 in
+    add_lockspace ls host_id;
+    rem_lockspace ls host_id;
+  )
+
 let test_init_resource =
   "Test we can initialise a resource" >:: fun () ->
   with_temp_file (fun path _ ->
@@ -72,5 +81,6 @@ let _ =
     test_get_alignment;
     test_init_lockspace;
     test_init_resource;
+    test_add_rem_lockspace;
   ] in
   OUnit2.run_test_tt_main @@ ounit2_of_ounit1 suite
