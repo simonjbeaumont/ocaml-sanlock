@@ -31,6 +31,12 @@ let make_disk ?(offset=0L) path =
     pad2 = UInt32.of_int 0;
   }
 
+let no_options =
+  { B.Sanlk_options.name = "";
+    flags = crush_flags [];
+    len = UInt32.zero;
+    str = [];
+  }
 
 let init_lockspace ?(offset=0L) ?(max_hosts=0) ?(num_hosts=0) name path =
   let host_id_disk = make_disk ~offset path in
@@ -91,19 +97,24 @@ let init_resource ?(max_hosts=0) ?(num_hosts=0) lockspace disk_offsets name =
   B.sanlock_init_resource null res max_hosts num_hosts |> check_rv;
   res
 
-let acquire sock resources options =
-  let pid = 0 in  (* we're using sock > -1 as obtained from register() *)
-  let flags = crush_flags [] in   (* No flags for acuqire despite prototype *)
-  let res_arr = CArray.of_list B.Sanlk_resource.t resources in
-  let res_count = CArray.length res_arr in
-  let res_args = CArray.start res_arr in
-  B.sanlock_acquire sock pid flags res_count res_args options
+let acquire ?(shared=false) handle resource =
+  let acquire_flags = if shared then T.Acquire_flag.([ res_shared ]) else [] in
+  let flags = crush_flags acquire_flags in
+  (* We're using sock > -1 as obtained from register() so set pid = 0 *)
+  let pid = 0 in
+  let sock = int_of_fd handle in
+  (* Simplify the API by only handling one at a time *)
+  let res_count = 1 in
+  let res_args = CArray.(of_list B.Sanlk_resource.t [resource] |> start) in
+  B.sanlock_acquire sock pid flags res_count res_args no_options |> check_rv
 
-let release ?(all=false) sock resources =
-  let pid = 0 in  (* we're using sock > -1 as obtained from register() *)
-  let release_flags = if all then T.Release_flag.([ rel_all ]) else [] in
-  let flags = crush_flags release_flags in
-  let res_arr = CArray.of_list B.Sanlk_resource.t resources in
-  let res_count = CArray.length res_arr in
-  let res_args = CArray.start res_arr in
-  B.sanlock_release sock pid flags res_count res_args
+let release handle resource =
+  (* There's a flag to release all resources but we'll handle one at a time *)
+  let flags = crush_flags [] in
+  (* We're using sock > -1 as obtained from register() so set pid = 0 *)
+  let pid = 0 in
+  let sock = int_of_fd handle in
+  (* Simplify the API by only handling one at a time *)
+  let res_count = 1 in
+  let res_args = CArray.(of_list B.Sanlk_resource.t [resource] |> start) in
+  B.sanlock_release sock pid flags res_count res_args |> check_rv

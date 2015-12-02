@@ -74,6 +74,20 @@ let test_init_resource =
     init_resource ls [(path, offset)] "resource1" |> ignore
   )
 
+let test_acquire_release =
+  "Test we can acquire a resource lock" >:: fun () ->
+  with_temp_file (fun path _ ->
+    let ls = init_lockspace "lockspace1" path in
+    let offset = get_alignment path in
+    let res = init_resource ls [(path, offset)] "resource1" in
+    let host_id = 1 in
+    add_lockspace ls host_id;
+    let handle = register () in
+    acquire handle res;
+    release handle res;
+    rem_lockspace ls host_id
+  )
+
 let _ =
   check_sanlock_daemon ();
   let suite = "sanlock" >::: [
@@ -82,5 +96,6 @@ let _ =
     test_init_lockspace;
     test_init_resource;
     test_add_rem_lockspace;
+    test_acquire_release;
   ] in
   OUnit2.run_test_tt_main @@ ounit2_of_ounit1 suite

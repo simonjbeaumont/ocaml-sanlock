@@ -25,6 +25,10 @@ module Types (F: Cstubs.Types.TYPE) = struct
     let restrict_sigterm = constant "SANLK_RESTRICT_SIGTERM" uint32_t
   end
 
+  module Acquire_flag = struct
+    let res_shared = constant "SANLK_RES_SHARED" uint32_t
+  end
+
   module Release_flag = struct
     let rel_all = constant "SANLK_REL_ALL" uint32_t
   end
@@ -385,7 +389,7 @@ module Bindings (F : Cstubs.FOREIGN) = struct
     (int @-> uint32_t @-> returning int)
 
   let sanlock_acquire = foreign "sanlock_acquire"
-    (int @-> int @-> uint32_t @-> int @-> (ptr Sanlk_resource.t) @-> Sanlk_options.t @-> returning int)
+    (int @-> int @-> uint32_t @-> int @-> ptr Sanlk_resource.t @-> Sanlk_options.t @-> returning int)
 
   let sanlock_release = foreign "sanlock_release"
     (int @-> int @-> uint32_t @-> int @-> (ptr Sanlk_resource.t) @-> returning int)
