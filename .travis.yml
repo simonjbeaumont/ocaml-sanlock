@@ -5,9 +5,7 @@ branches:
   only: master
 install:
   - wget https://raw.githubusercontent.com/ocaml/ocaml-travisci-skeleton/master/.travis-opam.sh
-  - wget https://raw.githubusercontent.com/simonjbeaumont/ocaml-travis-coveralls/master/travis-coveralls.sh
-script: sudo apt-get install sanlock && sudo sanlock daemon -w 0 -U $USER -R 1 && bash -ex .travis-opam.sh && bash -ex travis-coveralls.sh
+script: bash -ex .travis-opam.sh
 env:
   global:
-  - OCAML_VERSION=4.02 TESTS=true
-  - COV_CONF="./configure --enable-tests"
+  - OCAML_VERSION=4.02 TESTS=false
