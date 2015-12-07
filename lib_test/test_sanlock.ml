@@ -25,6 +25,10 @@ let sleep s = Unix.select [] [] [] s |> ignore
 
 let check_sanlock_daemon () =
   let pid_file = "/var/run/sanlock/sanlock.pid" in
+  if not (Sys.file_exists pid_file) then begin
+    print_endline "error: sanlock daemon isn't running.";
+    exit 1;
+  end;
   let pid_ic = open_in pid_file in
   let pid = input_line pid_ic in
   close_in pid_ic;
