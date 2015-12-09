@@ -50,6 +50,20 @@ let init_lockspace ?(offset=0L) ?(max_hosts=0) ?(num_hosts=0) name path =
   B.sanlock_init_lockspace ls null max_hosts num_hosts |> check_rv;
   ls
 
+let read_lockspace ?(offset=0L) path =
+  let host_id_disk = make_disk ~offset path in
+  let ls = {
+    B.Sanlk_lockspace.name = "";
+    host_id = UInt64.zero;
+    flags = UInt32.zero;
+    host_id_disk;
+  } in
+  let ls_ptr = B.Sanlk_lockspace.to_internal_ptr ls in
+  let flags = UInt32.zero in
+  let io_timeout_ptr = allocate_n uint32_t 1 in
+  B.sanlock_read_lockspace ls_ptr flags io_timeout_ptr |> check_rv;
+  B.Sanlk_lockspace.of_internal_ptr ls_ptr
+
 let add_lockspace ?(async=false) lockspace host_id =
   let ls = { lockspace with B.Sanlk_lockspace.host_id = UInt64.of_int host_id } in
   let add_flags = if async then T.Add_flag.([ add_async ]) else [] in
@@ -97,6 +111,23 @@ let init_resource ?(max_hosts=0) ?(num_hosts=0) lockspace disk_offsets name =
   } in
   B.sanlock_init_resource null res max_hosts num_hosts |> check_rv;
   res
+
+let read_resource ?(offset=0L) path =
+  let res = {
+    B.Sanlk_resource.lockspace_name = "";
+    name = "";
+    lver = UInt64.zero;
+    data64 = UInt64.zero;
+    data32 = UInt32.zero;
+    unused = UInt32.zero;
+    flags = UInt32.zero;
+    num_disks = UInt32.one;
+    disks = [ make_disk ~offset path ]
+  } in
+  let res_ptr = B.Sanlk_resource.to_internal_ptr res in
+  let flags = UInt32.zero in
+  B.sanlock_read_resource res_ptr flags |> check_rv;
+  B.Sanlk_resource.of_internal_ptr res_ptr
 
 let acquire ?(shared=false) handle resource =
   let acquire_flags = if shared then T.Acquire_flag.([ res_shared ]) else [] in
